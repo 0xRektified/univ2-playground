@@ -50,26 +50,50 @@ contract UniswapV2SwapAmountsTest is Test {
         path[0] = DAI;
         path[1] = WETH;
         path[2] = MKR;
-        uint amountIn = 2000 * 10 ** IERC20(DAI).decimals(); // give the user 10k DAI
-        uint amountOut = 1;
+        uint amountIn = 2000 * 10 ** IERC20(DAI).decimals();
+        uint amountOut = 1e18;
 
         console2.log("amountIn", amountIn);
 
-        address user = makeAddr("user");
+        address user = makeAddr("testSwapExactInMinOut");
         deal(user, 1e18); // give the user 1 ETH for gas
-
         deal(DAI, user, amountIn);
 
         vm.startPrank(user);
         dai.approve(address(router), type(uint256).max);
         router.swapExactTokensForTokens(amountIn, amountOut, path, user, block.timestamp);
-
         vm.stopPrank();
 
         console2.log("DAI balance", dai.balanceOf(user));
         console2.log("WETH balance", weth.balanceOf(user));
         console2.log("MKR balance", mkr.balanceOf(user));
-        
+        assertGe(mkr.balanceOf(user), amountOut, "MKR balance of user");
+    }
+
+    // SEND EXACT up to 2k DAI expect exact 1 MKR out
+    function testSwapMaxInExactOut() public {
+        // Test setup
+        address[] memory path = new address[](3);
+        path[0] = DAI;
+        path[1] = WETH;
+        path[2] = MKR;
+        uint amountInMax = 2000 * 10 ** IERC20(DAI).decimals();
+        uint amountOut = 1e18;
+
+        console2.log("amountInMax", amountInMax);
+
+        address user = makeAddr("testSwapMaxInExactOut");
+        deal(user, 1e18); // give the user 1 ETH for gas
+        deal(DAI, user, amountInMax);
+
+        vm.startPrank(user);
+        dai.approve(address(router), type(uint256).max);
+        router.swapTokensForExactTokens(amountOut, amountInMax, path, user, block.timestamp);
+        vm.stopPrank();
+
+        console2.log("DAI balance", dai.balanceOf(user));
+        console2.log("WETH balance", weth.balanceOf(user));
+        console2.log("MKR balance", mkr.balanceOf(user));
         assertGe(mkr.balanceOf(user), amountOut, "MKR balance of user");
     }
 }
