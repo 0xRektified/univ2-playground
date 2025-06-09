@@ -31,6 +31,44 @@ This means the liquidity of the AMM is 200, and all combinations of token X and 
 
 # Swap
 
+## 📘 Uniswap V2 Swap Graph – Summary of Key Formulas
+
+### 🔹 Invariant
+- `x * y = L²`  
+  The constant product rule that the pool maintains.
+
+### 🔹 Curve Equation
+- `y = L² / x`  
+  The shape of the swap curve (a hyperbola).
+
+### 🔹 Initial Price (Tangent Slope)
+- `p₀ = -y₀ / x₀`  
+  The instantaneous price before the trade (marginal price).
+
+### 🔹 Swap Price (Average Execution Price)
+- `p_swap = dy / dx`  
+  The actual price paid during the swap.
+
+### 🔹 Swap Equation (Preserving the Invariant)
+- `(x₀ + dx)(y₀ - dy) = x₀ * y₀`  
+  Ensures that the product stays constant after the swap.
+
+### 🔹 Solving for dy
+- `dy = y₀ - (x₀ * y₀) / (x₀ + dx)`  
+  How much of token Y the trader receives.
+
+### 🔹 Final Simplified Form of dy
+- `dy = (y₀ * dx) / (x₀ + dx)`  
+  Clean and practical formula for output amount.
+
+### 🔹 Tangent Line Equation
+- `y = p₀ * (x - x₀) + y₀`  
+  Linear approximation of the curve at the initial point.
+
+### 🔹 Swap Line Equation
+- `y = p_swap * (x - x₀) + y₀`  
+  Line connecting the trade input and output points.
+
 ##  Swap Math
 
 If (x_0 + dx)(y_0 - dy) = L^2 final equation after a swap
@@ -89,6 +127,24 @@ Basic swap contract call:
 Multi-hop swap
 
 ![image](./Screenshot%202025-06-08%20at%2018.32.59.png)
+
+##  Swap Line tangeant and Line swap
+
+From the graph:
+
+`P₀` is the instantaneous price, this is the derivative of the curve at that point
+
+`Pswap` is the effective swap price, how much of token Y you get per unit of token X. It’s not constant — it depends on the size of the trade due to slippage
+
+
+	•	p₀ = -y₀ / x₀ → the initial slope, a linear approximation of the price at that point
+	•	p_swap = dy / dx → the actual execution price of the trade
+
+
+	•	y = p₀(x - x₀) + y₀ (orange line): linear approximation of the curve at (x₀, y₀)
+	•	y = p_swap(x - x₀) + y₀ (red line): line showing the direction/price path of the actual swap
+
+![image](./Screenshot%202025-06-09%20at%2011.04.35.png)
 
 # Code repo
 
@@ -391,7 +447,9 @@ Let's check what the _update method does, it update the local balance and the TW
     }
 ```
 
-Exmaple of 
+Exmaple for `swapExactTokensForTokens` and `swapTokensForExactTokens` in test/UniswapV2SwapAmountsTest.t.sol
+
+
 
 ## V2-core
 
