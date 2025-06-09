@@ -1,6 +1,14 @@
 ## UniswapV2 PLAYGROUND
 
+### Notes.md
+
+Notes are a quick summary of UniswapV2 core functionality and algorithms.
+Most valuable informations from this repo are in the notes.
+
+### Playground test flow
+
 forge test --fork-url $ETH_RPC_URL --match-path test/UniswapV2SwapAmountsTest.t.sol
+
 
 ## Foundry
 
