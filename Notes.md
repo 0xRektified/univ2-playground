@@ -26,7 +26,7 @@ In this example, we see an AMM where:
 
 This means the liquidity of the AMM is 200, and all combinations of token X and token Y that satisfy the function `x * y = L ^ 2` are valid.
 
-![image](./Screenshot%202025-06-08%20at%2016.26.35.png)
+![image](./1.png)
 
 
 # Swap
@@ -122,11 +122,11 @@ dy = 0.4984171796786434
 
 Basic swap contract call:
 
-![image](./Screenshot%202025-06-08%20at%2018.30.25.png)
+![image](./2.png)
 
 Multi-hop swap
 
-![image](./Screenshot%202025-06-08%20at%2018.32.59.png)
+![image](./3.png)
 
 ##  Swap Line tangeant and Line swap
 
@@ -144,9 +144,59 @@ From the graph:
 	•	y = p₀(x - x₀) + y₀ (orange line): linear approximation of the curve at (x₀, y₀)
 	•	y = p_swap(x - x₀) + y₀ (red line): line showing the direction/price path of the actual swap
 
-![image](./Screenshot%202025-06-09%20at%2011.04.35.png)
+![image](./4.png)
 
-# Code repo
+## 📘 Spot Price vs Execution Price – Summary
+
+### 🔷 1. Constant Product Rule
+- The core formula is: `x * y = k`
+- This creates a curved line of valid token balances (purple line).
+
+---
+
+### 🔶 2. Spot Price (Instantaneous Price)
+- Formula: `spot price = -y₀ / x₀`
+- It’s the slope of the orange tangent line at point `(x₀, y₀)`
+- Represents the current price for an infinitesimally small trade.
+
+---
+
+### 🟩 3. Execution Price (Real Trade)
+- Formula: `execution price = -dy / dx`
+- It's the slope of the green secant line from `(x₀, y₀)` to `(x₀ + dx, y₀ - dy)`
+- Represents the average price over a real trade (with slippage).
+
+---
+
+### 🧮 4. Deriving Execution Price
+Start from the swap invariant:
+``(x₀ + dx)(y₀ - dy) = x₀ * y₀``
+
+Solve for `dy`:
+``dy = y₀ - (x₀ * y₀) / (x₀ + dx)``
+→ Factor and simplify:
+``dy = y₀ * (dx / (x₀ + dx))``
+
+Now divide by `dx`:
+``dy / dx = y₀ / (x₀ + dx)``
+→ So:  
+**`execution price = -dy/dx = -y₀ / (x₀ + dx)`**
+
+---
+
+### ✅ 5. Small Trade Behavior (dx → 0)
+If `dx` is very small:
+``x₀ + dx ≈ x₀``
+→ Then:  
+**`execution price ≈ spot price = -y₀ / x₀`**
+
+💡 This means smaller trades suffer less slippage!
+
+
+![image](./5.png)
+
+
+# Code Walkthrough
 
 ## V2-periphery
 
@@ -453,9 +503,43 @@ Exmaple for `swapExactTokensForTokens` and `swapTokensForExactTokens` in test/Un
 
 ## V2-core
 
-### V2-pair and V2-factory
+### Create pair walk through
 
-https://github.com/Uniswap/uniswap-v2-core
+https://github.com/Uniswap/v2-core
 
+https://github.com/Uniswap/v2-core/blob/master/contracts/UniswapV2Pair.sol
 
-0xBd68dbE675d0d1108af3aEbC5F7724Cf31c82E9a
+https://github.com/Uniswap/v2-core/blob/master/contracts/UniswapV2Factory.sol
+
+Using create2 to calculate the address of the pair contract before deploying it
+
+```java
+    function createPair(address tokenA, address tokenB) external returns (address pair) {
+        require(tokenA != tokenB, 'UniswapV2: IDENTICAL_ADDRESSES');
+        // NOTE: sort tokens by address
+        // address <-> 20 bytes hex <-> 160 bit number
+        // 0x1234567890123456789012345678901234567890 <-> 103929005307130220006098923584552504982110632080
+        // address(1), address(2)
+        (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
+        require(token0 != address(0), 'UniswapV2: ZERO_ADDRESS');
+        require(getPair[token0][token1] == address(0), 'UniswapV2: PAIR_EXISTS'); // single check is sufficient
+        // NOTE: create code = runtime code + constructor code
+        bytes memory bytecode = type(UniswapV2Pair).creationCode;
+        // NOTE: deploy with create2 - UniswapV2Library.pairFor
+        // NOTE: create2 addr <- keccak256(creation bytecode) <- constructor args
+        // create2 addr = keccak256(0xff, deployer salt, keccak256(creation bytecode))
+        bytes32 salt = keccak256(abi.encodePacked(token0, token1));
+        assembly {
+            // NOTE: pair = address(new UniswapV2Pair(salt: salt)())
+            pair := create2(0, add(bytecode, 32), mload(bytecode), salt)
+        }
+        // NOTE: call initialize to initialize contract without constructor args
+        IUniswapV2Pair(pair).initialize(token0, token1);
+        getPair[token0][token1] = pair;
+        getPair[token1][token0] = pair; // populate mapping in the reverse direction
+        allPairs.push(pair);
+        emit PairCreated(token0, token1, pair, allPairs.length);
+    }
+```
+
+Code to simply create a new pair is in the the UniswapV2PairTest.t.sol
