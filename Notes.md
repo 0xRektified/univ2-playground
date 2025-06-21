@@ -196,9 +196,7 @@ If `dx` is very small:
 ![image](./5.png)
 
 
-# Code Walkthrough
-
-## V2-periphery
+## Code Walkthrough V2-periphery
 
 ### Router
 
@@ -543,3 +541,378 @@ Using create2 to calculate the address of the pair contract before deploying it
 ```
 
 Code to simply create a new pair is in the the UniswapV2PairTest.t.sol
+
+
+# Liquidity
+
+s = the amount of share
+
+L1 = Value of the pool after the user deposits liquidity
+
+L0 = Value of the pool before the user deposits liquidity
+
+T = Total current share
+
+s = ((L1 - L0) / L0) * T
+
+![image](./6-case-study.png)
+
+
+## Add liquidity
+
+
+![image](./7-liquidity.png)
+![image](./8-liquidity-example.png)
+
+
+## Remove liquidity
+
+![image](./9-burn-liquidity.png)
+![image](./10-burn-liquidity-example.png)
+
+## Add Liquidity – Maintain Constant Price
+
+When adding liquidity to a Uniswap V2 pool, we must add amounts `dx` and `dy` **in the correct ratio** so that the **price doesn't change**.
+
+
+Visual Graph
+![image](./11-liquidity-math.png)
+
+---
+
+### 🔷 Step 1: Define the current price
+
+The spot price before adding liquidity is:
+
+```
+price = y₀ / x₀
+```
+
+We want to **preserve this price** even after adding more tokens.
+
+---
+
+### 🔷 Step 2: Set up the price condition
+
+After adding `dx` and `dy`, the new reserves become `x₀ + dx` and `y₀ + dy`.
+
+To keep the price the same:
+
+```
+(y₀ + dy) / (x₀ + dx) = y₀ / x₀
+```
+
+---
+
+### 🔷 Step 3: Cross-multiply and simplify
+
+Cross-multiplying:
+
+```
+(x₀ + dx)(y₀) = (x₀)(y₀ + dy)
+```
+
+Now distribute both sides:
+
+```
+x₀ · y₀ + dx · y₀ = x₀ · y₀ + x₀ · dy
+```
+
+Subtract `x₀ · y₀` from both sides:
+
+```
+dx · y₀ = x₀ · dy
+```
+
+---
+
+### 🔷 Step 4: Solve for dy/dx
+
+Divide both sides by `dx · x₀`:
+
+```
+dy / dx = y₀ / x₀
+```
+
+✅ This tells you:  
+To keep the price constant, the tokens must be added in the same **ratio as the current reserves**.
+
+---
+
+### 🟩 Final Rule:
+
+```
+dy / dx = y₀ / x₀
+```
+
+📌 This is why liquidity providers must **match the pool's current ratio** of tokens.
+
+
+## Code walkthrough
+
+![image](./12-liquidity-contract-interaction.png)
+
+`UniswapV2Router02.sol`
+
+```java
+//NOTE: addliquidityETH to deposit ERC200+ ETH
+    function addLiquidity(
+        address tokenA,
+        address tokenB,
+        uint amountADesired,
+        uint amountBDesired,
+        uint amountAMin,
+        uint amountBMin,
+        address to,
+        uint deadline
+    ) external virtual override ensure(deadline) returns (uint amountA, uint amountB, uint liquidity) {
+        (amountA, amountB) = _addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin);
+        address pair = UniswapV2Library.pairFor(factory, tokenA, tokenB);
+        // NOTE: transfer of tokens before mint
+        TransferHelper.safeTransferFrom(tokenA, msg.sender, pair, amountA);
+        TransferHelper.safeTransferFrom(tokenB, msg.sender, pair, amountB);
+        liquidity = IUniswapV2Pair(pair).mint(to);
+    }
+```
+
+Calling the internal add_liquidity, we are only interested in the case where reserveA and reserveB are both non-zero, otherwise it's ismple we just create the pair with the price desired
+
+```java
+    function _addLiquidity(
+        address tokenA,
+        address tokenB,
+        uint amountADesired,
+        uint amountBDesired,
+        uint amountAMin,
+        uint amountBMin
+    ) internal virtual returns (uint amountA, uint amountB) {
+        // create the pair if it doesn't exist yet
+        if (IUniswapV2Factory(factory).getPair(tokenA, tokenB) == address(0)) {
+            IUniswapV2Factory(factory).createPair(tokenA, tokenB);
+        }
+        (uint reserveA, uint reserveB) = UniswapV2Library.getReserves(factory, tokenA, tokenB);
+        if (reserveA == 0 && reserveB == 0) {
+            (amountA, amountB) = (amountADesired, amountBDesired);
+        } else {
+            uint amountBOptimal = UniswapV2Library.quote(amountADesired, reserveA, reserveB);
+            // NOTE: we are in the range of deisder and amountmin
+            if (amountBOptimal <= amountBDesired) {
+                require(amountBOptimal >= amountBMin, 'UniswapV2Router: INSUFFICIENT_B_AMOUNT');
+                (amountA, amountB) = (amountADesired, amountBOptimal);
+            } else {
+                uint amountAOptimal = UniswapV2Library.quote(amountBDesired, reserveB, reserveA);
+                // NOTE: amountBOptimal >= amountBDesired so amountAOptimal <= amountADesired
+                assert(amountAOptimal <= amountADesired);
+                require(amountAOptimal >= amountAMin, 'UniswapV2Router: INSUFFICIENT_A_AMOUNT');
+                (amountA, amountB) = (amountAOptimal, amountBDesired);
+            }
+        }
+    }
+
+```
+
+
+It calls an internal Library function `quote` to calculate the optimal amount of the other token 
+
+```java
+    // given some amount of an asset and pair reserves, returns an equivalent amount of the other asset
+    function quote(uint amountA, uint reserveA, uint reserveB) internal pure returns (uint amountB) {
+        require(amountA > 0, 'UniswapV2Library: INSUFFICIENT_AMOUNT');
+        require(reserveA > 0 && reserveB > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
+        // dy = dx * y0 / x0
+        amountB = amountA.mul(reserveB) / reserveA;
+    }
+```
+
+Example on how to add liquidity in UniswapV2AddLiquidityTest.t.sol
+
+When adding or removing liquidity the constant price should remain the same
+
+### Math remove liquidity
+
+When removing liquidity the formula is the same
+
+```
+dy/dx = yo/xo
+```
+
+When we remove liquidity we ll burn share.
+
+s = shares to burn
+T = total shares
+L0 = value of the pool before removing liquidity
+L1 = value of the pool after removing liquidity
+L0-L1 = s/T * L0
+
+ ((L1 - L0) / L0) = dx / x0 = dy/y0
+
+Final equation
+```
+ dx = x0* s/T
+
+ dy = y0* s/T
+```
+
+Derived from 
+
+s/T = (L0-L1)/L0 = dx/x0 = dy/Y0
+
+s/T = dx / x0
+
+x0 * s/T = dx
+OR 
+y0 * s/T = dy 
+
+
+### walkthrough remove liquidity
+
+Check uniswap router removeLiquidity
+
+Check the logic of burn as when removing liquidity the router send the amount of liquidity to burn from the router to the pair contract and the pair contract burn all the LP tokens in the pair as they just got sent to the pair contract.
+
+# Flash loan
+
+## Flah swap fees
+
+borrow dx0
+repay dx1 = dx0 + fee
+x0 = reserve beforeFlash swap Fee Equation:
+
+```
+x0 - dx0 + 0.997 dx1 >= x0
+```
+
+So fee is
+```
+fee = 3 / 997 dx0
+```
+
+Swap dx for dy
+
+```
+amount in = dx
+amount in - fee = 0.997 dx
+amount = dy
+```
+Swap fee
+`fee = 0.0003dx`
+
+Flash swap
+```
+amount out = borrow dx0
+amount in = repay dx1 = dx0 + fee
+amount in - fee = 0.9997 dx1
+```
+
+Flash swap fee
+```
+fee = 0.0003 dx1
+```
+
+![image](./13-flash-swap-fee.png)
+
+![image](./14-flash-swap-fee-simplification.png)
+
+## Flash swap Code walkthrough
+
+![image](./15-flash-swap-flow.png)
+
+Check uniswapV2Pair for the swap function.
+
+To trigger it we need to specified the amount to borrow, to will handle the callback we also need to have data not empty
+
+Setup i having a contract with a `uniswapV2Call` callback
+
+contract call the `swap` pair method with amount out and token and caller as byte data
+
+```solidity
+function flashSwap(address token, uint256 amount) external {
+    require(token == token0 || token == token1, "invalid token");
+    (uint256 amount0Out, uint256 amount1Out) =
+    token == token0 ? (amount, uint256(0)) : (uint256(0), amount);
+
+    // 2. Encode token and msg.sender as bytes
+    bytes memory data = abi.encode(token, msg.sender);
+
+    // 3. Call pair.swap
+    pair.swap(
+        amount0Out,
+        amount1Out,
+        address(this),
+        data
+    );
+}
+```
+
+Then setup the callback to handle the logic:
+```solidity
+function uniswapV2Call(
+    address sender,
+    uint256 amount0,
+    uint256 amount1,
+    bytes calldata data
+) external {
+
+    // 1. Require msg.sender is pair contract
+    require(msg.sender == address(pair), "Uniswap V2: INVALID_TO");
+
+    // 2. Require sender is this contract
+    require(sender == address(this), "Uniswap V2: INVALID_TO");
+
+    // 3. Decode token and caller from data
+    (address token, address caller) = abi.decode(data, (address, address));
+
+    // 4. Determine amount borrowed (only one of them is > 0)
+    uint256 amount = token0 == token ? amount0 : amount1;
+
+    // 5. Calculate flash swap fee and amount to repay
+    uint256 fee = (amount * 3) / 997 + 1; // 1 to round up
+    uint256 amountToRepay = amount + fee;
+
+    // 6. Get flash swap fee from caller
+    // NOTE: Goal here is to have the contract making money and pay for the fee for the demo we have the user paying for fees
+    IERC20(token).transferFrom(caller, address(this), fee);
+    IERC20(token).transfer(address(pair), amountToRepay);
+}
+```
+
+# TWAP
+
+## Spot price oracle
+
+Twap - time weighted average price
+
+Pi = Price Of token X in terms of then Y
+between time ti <= t <= ti+1
+
+Delta of ti = ti+1 -ti
+
+![image](./16-twap.png)
+
+In a contract we ll need cumulative Price instead of using a for loop
+
+                                  j-1
+cj = cumulative price up to tj = E(Pi * Delta ti)
+                                  i=0
+
+Twap for tk to tn = cn - ck / tn - tk
+
+![image](./17-twap-example.png)
+
+key operation are done here:
+
+```solidity
+        if (timeElapsed > 0 && _reserve0 != 0 && _reserve1 != 0) {
+            // NOTE: TWAP - Time weighted average pricing
+            // * never overflows, and + overflow is desired
+            price0CumulativeLast += uint(UQ112x112.encode(_reserve1).uqdiv(_reserve0)) * timeElapsed;
+            price1CumulativeLast += uint(UQ112x112.encode(_reserve0).uqdiv(_reserve1)) * timeElapsed;
+        }
+```
+
+overflow is ok because we are calculating the diff between current cumulative price and last cumulative price
+
+check UniswapV2Twap.t.sol example
+
+
+# TWAP
