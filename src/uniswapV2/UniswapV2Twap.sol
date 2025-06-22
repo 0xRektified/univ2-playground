@@ -2,7 +2,7 @@
 pragma solidity >= 0.4 < 0.9;
 
 import {IUniswapV2Pair} from "../../interfaces/IUniswapV2Pair.sol";
-import {FixedPoint} from "../../src/FixedPoint.sol";
+import {FixedPoint} from "./FixedPoint.sol";
 
 // Modified from https://github.com/Uniswap/v2-periphery/blob/master/contracts/examples/ExampleOracleSimple.sol
 // Do not use this contract in production
