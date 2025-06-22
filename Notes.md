@@ -915,4 +915,37 @@ overflow is ok because we are calculating the diff between current cumulative pr
 check UniswapV2Twap.t.sol example
 
 
-# TWAP
+# Arbitrage
+
+check src/UniswapV2Arb1.sol and src/UniswapV2Arb2.t.sol for arbitrage example using uniswap router or uniswap pair contract
+
+
+## Arbitrage optimal amount in
+
+Arbitrage profit function is
+
+f(dyA) = dyB - dyA
+
+dyA* = Amount in that maximizes F
+
+dyA* = (-b + sqrt(b^2 + 4ac)) / 2a
+
+Where
+a = k^2
+b = 2 \* k \* x\_a \* y\_b
+c = (y\_a \* x\_b) + ( (1 - f) \* x\_b + (1 - f)^2 \* x\_a )^2
+
+
+f = swap fee 0 <= f <= 1
+xA = AMM A reserve out
+yA = AMM A reserve in
+xB = AMM B reserve in
+yB = AMM B reserve out
+
+## Math
+
+swap amount out = Aout = (A in (1 -f )Rout) / (Rin + A in (1 -f ))
+
+Ain = amount in
+Rin = reserve in
+R out = reserve out
