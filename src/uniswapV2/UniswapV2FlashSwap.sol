@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
 
-import {IUniswapV2Pair} from "../interfaces/IUniswapV2Pair.sol";
+import {IUniswapV2Pair} from "../../interfaces/IUniswapV2Pair.sol";
 
 contract UniswapV2FlashSwap {
     IUniswapV2Pair private immutable pair;

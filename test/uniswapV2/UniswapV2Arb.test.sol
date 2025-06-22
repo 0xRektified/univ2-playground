@@ -1,11 +1,11 @@
 import {Test, console2} from "forge-std/Test.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
-import {IUniswapV2Router02} from "../interfaces/IUniswapV2Router02.sol";
-import {IUniswapV2Factory} from "../interfaces/IUniswapV2Factory.sol";
-import {IUniswapV2Pair} from "../interfaces/IUniswapV2Pair.sol";
+import {IUniswapV2Router02} from "../../interfaces/IUniswapV2Router02.sol";
+import {IUniswapV2Factory} from "../../interfaces/IUniswapV2Factory.sol";
+import {IUniswapV2Pair} from "../../interfaces/IUniswapV2Pair.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {UniswapV2Arb} from "../src/UniswapV2Arb1.sol";
-import {IWETH} from "../interfaces/IWETH.sol";
+import {UniswapV2Arb} from "../../src/UniswapV2/UniswapV2Arb1.sol";
+import {IWETH} from "../../interfaces/IWETH.sol";
 
 // Test arbitrage between Uniswap and Sushiswap
 contract UniswapV2ArbTest is Test {

@@ -2,12 +2,12 @@
 pragma solidity ^0.8.20;
 
 import {Test, console2} from "forge-std/Test.sol";
-import {IUniswapV2Pair} from "../interfaces/IUniswapV2Pair.sol";
+import {IUniswapV2Pair} from "../../interfaces/IUniswapV2Pair.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
-import {IUniswapV2Router02} from "../interfaces/IUniswapV2Router02.sol";
-import {IWETH} from "../interfaces/IWETH.sol";
-import {UniswapV2Arb2} from "../src/UniswapV2Arb2.sol";
-import {IUniswapV2Factory} from "../interfaces/IUniswapV2Factory.sol";
+import {IUniswapV2Router02} from "../../interfaces/IUniswapV2Router02.sol";
+import {IWETH} from "../../interfaces/IWETH.sol";
+import {UniswapV2Arb2} from "../../src/UniswapV2/UniswapV2Arb2.sol";
+import {IUniswapV2Factory} from "../../interfaces/IUniswapV2Factory.sol";
 
 // Test arbitrage between Uniswap and Sushiswap
 // Buy WETH on Uniswap, sell on Sushiswap.

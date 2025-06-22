@@ -26,7 +26,7 @@ In this example, we see an AMM where:
 
 This means the liquidity of the AMM is 200, and all combinations of token X and token Y that satisfy the function `x * y = L ^ 2` are valid.
 
-![image](./1.png)
+![image](./UniswapV2img/1.png)
 
 
 # Swap
@@ -122,11 +122,11 @@ dy = 0.4984171796786434
 
 Basic swap contract call:
 
-![image](./2.png)
+![image](./UniswapV2img/2.png)
 
 Multi-hop swap
 
-![image](./3.png)
+![image](./UniswapV2img/3.png)
 
 ##  Swap Line tangeant and Line swap
 
@@ -144,7 +144,7 @@ From the graph:
 	•	y = p₀(x - x₀) + y₀ (orange line): linear approximation of the curve at (x₀, y₀)
 	•	y = p_swap(x - x₀) + y₀ (red line): line showing the direction/price path of the actual swap
 
-![image](./4.png)
+![image](./UniswapV2img/4.png)
 
 ## 📘 Spot Price vs Execution Price – Summary
 
@@ -193,7 +193,7 @@ If `dx` is very small:
 💡 This means smaller trades suffer less slippage!
 
 
-![image](./5.png)
+![image](./UniswapV2img/5.png)
 
 
 ## Code Walkthrough V2-periphery
@@ -555,20 +555,20 @@ T = Total current share
 
 s = ((L1 - L0) / L0) * T
 
-![image](./6-case-study.png)
+![image](./UniswapV2img/6-case-study.png)
 
 
 ## Add liquidity
 
 
-![image](./7-liquidity.png)
-![image](./8-liquidity-example.png)
+![image](./UniswapV2img/7-liquidity.png)
+![image](./UniswapV2img/8-liquidity-example.png)
 
 
 ## Remove liquidity
 
-![image](./9-burn-liquidity.png)
-![image](./10-burn-liquidity-example.png)
+![image](./UniswapV2img/9-burn-liquidity.png)
+![image](./UniswapV2img/10-burn-liquidity-example.png)
 
 ## Add Liquidity – Maintain Constant Price
 
@@ -576,7 +576,7 @@ When adding liquidity to a Uniswap V2 pool, we must add amounts `dx` and `dy` **
 
 
 Visual Graph
-![image](./11-liquidity-math.png)
+![image](./UniswapV2img/11-liquidity-math.png)
 
 ---
 
@@ -650,7 +650,7 @@ dy / dx = y₀ / x₀
 
 ## Code walkthrough
 
-![image](./12-liquidity-contract-interaction.png)
+![image](./UniswapV2img/12-liquidity-contract-interaction.png)
 
 `UniswapV2Router02.sol`
 
@@ -809,13 +809,13 @@ Flash swap fee
 fee = 0.0003 dx1
 ```
 
-![image](./13-flash-swap-fee.png)
+![image](./UniswapV2img/13-flash-swap-fee.png)
 
-![image](./14-flash-swap-fee-simplification.png)
+![image](./UniswapV2img/14-flash-swap-fee-simplification.png)
 
 ## Flash swap Code walkthrough
 
-![image](./15-flash-swap-flow.png)
+![image](./UniswapV2img/15-flash-swap-flow.png)
 
 Check uniswapV2Pair for the swap function.
 
@@ -887,7 +887,7 @@ between time ti <= t <= ti+1
 
 Delta of ti = ti+1 -ti
 
-![image](./16-twap.png)
+![image](./UniswapV2img/16-twap.png)
 
 In a contract we ll need cumulative Price instead of using a for loop
 
@@ -897,7 +897,7 @@ cj = cumulative price up to tj = E(Pi * Delta ti)
 
 Twap for tk to tn = cn - ck / tn - tk
 
-![image](./17-twap-example.png)
+![image](./UniswapV2img/17-twap-example.png)
 
 key operation are done here:
 
@@ -921,6 +921,8 @@ check src/UniswapV2Arb1.sol and src/UniswapV2Arb2.t.sol for arbitrage example us
 
 
 ## Arbitrage optimal amount in
+
+Optimal amount is the best ratio between amount in and profit not the optimal profit for any amount in.
 
 Arbitrage profit function is
 

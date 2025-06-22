@@ -2,11 +2,10 @@
 pragma solidity ^0.8.20;
 
 import {Test, console2} from "forge-std/Test.sol";
-import {IUniswapV2Pair} from "../interfaces/IUniswapV2Pair.sol";
+import {IUniswapV2Pair} from "../../interfaces/IUniswapV2Pair.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
-import {UniswapV2FlashSwap} from "../src/UniswapV2FlashSwap.sol";
-import {IUniswapV2Pair} from "../interfaces/IUniswapV2Pair.sol";
-import {IUniswapV2Factory} from "../interfaces/IUniswapV2Factory.sol";
+import {UniswapV2FlashSwap} from "../../src/UniswapV2/UniswapV2FlashSwap.sol";
+import {IUniswapV2Factory} from "../../interfaces/IUniswapV2Factory.sol";
 
 // UniswapRouter02 private constant router = UniswapRouter02(UNISWAP_V2_ROUTER_02);
 contract UniswapV2FlashSwapTest is Test {
