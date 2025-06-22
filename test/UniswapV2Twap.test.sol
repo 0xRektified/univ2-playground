@@ -3,10 +3,8 @@ pragma solidity ^0.8.20;
 
 import {Test, console2} from "forge-std/Test.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
-import {IUniswapV2Router02} from
-    "../interfaces/IUniswapV2Router02.sol";
-import {IUniswapV2Pair} from
-    "../interfaces/IUniswapV2Pair.sol";
+import {IUniswapV2Router02} from "../interfaces/IUniswapV2Router02.sol";
+import {IUniswapV2Pair} from "../interfaces/IUniswapV2Pair.sol";
 import {UniswapV2Twap} from "../src/UniswapV2Twap.sol";
 import {IUniswapV2Factory} from "../interfaces/IUniswapV2Factory.sol";
 
@@ -17,8 +15,7 @@ contract UniswapV2TwapTest is Test {
     address constant UNISWAP_V2_FACTORY = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
 
     IERC20 private constant weth = IERC20(WETH);
-    IUniswapV2Router02 private constant router =
-        IUniswapV2Router02(UNISWAP_V2_ROUTER_02);
+    IUniswapV2Router02 private constant router = IUniswapV2Router02(UNISWAP_V2_ROUTER_02);
     IUniswapV2Factory private constant factory = IUniswapV2Factory(UNISWAP_V2_FACTORY);
     IUniswapV2Pair private pair;
 

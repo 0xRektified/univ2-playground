@@ -9,7 +9,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract TestToken is ERC20 {
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
-        _mint(msg.sender, 1000000 * 10**18);
+        _mint(msg.sender, 1000000 * 10 ** 18);
     }
 }
 
@@ -26,7 +26,7 @@ contract UniswapV2PairTest is Test {
         address token0 = IUniswapV2Pair(pair).token0();
         address token1 = IUniswapV2Pair(pair).token1();
 
-        if (address(token) < WETH){
+        if (address(token) < WETH) {
             assertEq(token0, address(token), "token0");
             assertEq(token1, WETH, "token1");
         } else {

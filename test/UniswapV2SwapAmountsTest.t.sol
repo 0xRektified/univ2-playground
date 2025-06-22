@@ -11,7 +11,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract TestToken is ERC20 {
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
-        _mint(msg.sender, 1000000 * 10**18);
+        _mint(msg.sender, 1000000 * 10 ** 18);
     }
 }
 
@@ -61,8 +61,8 @@ contract UniswapV2SwapAmountsTest is Test {
         path[0] = DAI;
         path[1] = WETH;
         path[2] = MKR;
-        uint amountIn = 2000 * 10 ** IERC20(DAI).decimals();
-        uint amountOut = 1e18;
+        uint256 amountIn = 2000 * 10 ** IERC20(DAI).decimals();
+        uint256 amountOut = 1e18;
 
         console2.log("amountIn", amountIn);
 
@@ -88,8 +88,8 @@ contract UniswapV2SwapAmountsTest is Test {
         path[0] = DAI;
         path[1] = WETH;
         path[2] = MKR;
-        uint amountInMax = 2000 * 10 ** IERC20(DAI).decimals();
-        uint amountOut = 1e18;
+        uint256 amountInMax = 2000 * 10 ** IERC20(DAI).decimals();
+        uint256 amountOut = 1e18;
 
         console2.log("amountInMax", amountInMax);
 
@@ -107,5 +107,4 @@ contract UniswapV2SwapAmountsTest is Test {
         console2.log("MKR balance", mkr.balanceOf(user));
         assertGe(mkr.balanceOf(user), amountOut, "MKR balance of user");
     }
-
 }

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >= 0.4 < 0.9;
 
-import {IUniswapV2Pair} from
-    "../interfaces/IUniswapV2Pair.sol";
+import {IUniswapV2Pair} from "../interfaces/IUniswapV2Pair.sol";
 import {FixedPoint} from "../src/FixedPoint.sol";
 
 // Modified from https://github.com/Uniswap/v2-periphery/blob/master/contracts/examples/ExampleOracleSimple.sol
@@ -46,15 +45,12 @@ contract UniswapV2Twap {
 
         // 4. Call pair.getReserve to get last timestamp the reserves were updated
         //    and store it into the state variable updatedAt
-        (,,updatedAt) = pair.getReserves();
+        (,, updatedAt) = pair.getReserves();
     }
 
     // Exercise 2
     // Calculates cumulative prices up to current timestamp
-    function _getCurrentCumulativePrices()
-        internal
-        returns (uint256 price0Cumulative, uint256 price1Cumulative)
-    {
+    function _getCurrentCumulativePrices() internal returns (uint256 price0Cumulative, uint256 price1Cumulative) {
         // 1. Get latest cumulative prices from the pair contract
         price0Cumulative = pair.price0CumulativeLast();
         price1Cumulative = pair.price1CumulativeLast();
@@ -65,23 +61,23 @@ contract UniswapV2Twap {
 
         // 2. Get reserves and last timestamp the reserves were updated from
         //    the pair contract
-        (uint112 _reserve0,uint112 _reserve1, uint32 _blockTimestampLast) = pair.getReserves();
+        (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) = pair.getReserves();
 
         // 3. Cast block.timestamp to uint32
         uint32 blockTimestamp = uint32(block.timestamp);
-        if (_blockTimestampLast != blockTimestamp){
+        if (_blockTimestampLast != blockTimestamp) {
             // 4. Calculate elapsed time
             uint32 dt = blockTimestamp - _blockTimestampLast;
 
             // Addition overflow is desired
-         unchecked {
-            // 5. Add spot price * elapsed time to cumulative prices.
-            //    - Use FixedPoint.fraction to calculate spot price.
-            //    - FixedPoint.fraction returns UQ112x112, so cast it into uint256.
-            //    - Multiply spot price by time elapsed
-            price0Cumulative += uint256(FixedPoint.fraction(_reserve1, _reserve0)._x) * dt;
-            price1Cumulative += uint256(FixedPoint.fraction(_reserve0, _reserve1)._x) * dt;
-         }
+            unchecked {
+                // 5. Add spot price * elapsed time to cumulative prices.
+                //    - Use FixedPoint.fraction to calculate spot price.
+                //    - FixedPoint.fraction returns UQ112x112, so cast it into uint256.
+                //    - Multiply spot price by time elapsed
+                price0Cumulative += uint256(FixedPoint.fraction(_reserve1, _reserve0)._x) * dt;
+                price1Cumulative += uint256(FixedPoint.fraction(_reserve0, _reserve1)._x) * dt;
+            }
         }
         updatedAt = blockTimestamp;
     }
@@ -118,16 +114,11 @@ contract UniswapV2Twap {
         price0CumulativeLast = price0Cumulative;
         price1CumulativeLast = price1Cumulative;
         updatedAt = blockTimestamp;
-
     }
 
     // Exercise 4
     // Returns the amount out corresponding to the amount in for a given token
-    function consult(address tokenIn, uint256 amountIn)
-        external
-        view
-        returns (uint256 amountOut)
-    {
+    function consult(address tokenIn, uint256 amountIn) external view returns (uint256 amountOut) {
         // 1. Require tokenIn is either token0 or token1
         require(tokenIn == token0 || tokenIn == token1, "UniswapV2Twap: tokenIn");
 

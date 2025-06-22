@@ -2,11 +2,9 @@
 pragma solidity ^0.8.20;
 
 import {Test, console2} from "forge-std/Test.sol";
-import {IUniswapV2Pair} from
-    "../interfaces/IUniswapV2Pair.sol";
+import {IUniswapV2Pair} from "../interfaces/IUniswapV2Pair.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
-import {IUniswapV2Router02} from
-    "../interfaces/IUniswapV2Router02.sol";
+import {IUniswapV2Router02} from "../interfaces/IUniswapV2Router02.sol";
 import {IWETH} from "../interfaces/IWETH.sol";
 import {UniswapV2Arb2} from "../src/UniswapV2Arb2.sol";
 import {IUniswapV2Factory} from "../interfaces/IUniswapV2Factory.sol";
@@ -23,8 +21,7 @@ contract UniswapV2Arb2Test is Test {
     address constant SUSHISWAP_V2_FACTORY = 0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac;
     IUniswapV2Factory private constant uni_factory = IUniswapV2Factory(UNISWAP_V2_FACTORY);
     IUniswapV2Factory private constant sushi_factory = IUniswapV2Factory(SUSHISWAP_V2_FACTORY);
-    IUniswapV2Router02 private constant uni_router =
-        IUniswapV2Router02(UNISWAP_V2_ROUTER_02);
+    IUniswapV2Router02 private constant uni_router = IUniswapV2Router02(UNISWAP_V2_ROUTER_02);
     IERC20 private constant dai = IERC20(DAI);
     IWETH private constant weth = IWETH(WETH);
     address constant user = address(17547257);
@@ -57,13 +54,7 @@ contract UniswapV2Arb2Test is Test {
         uint256 bal0 = dai.balanceOf(user);
 
         vm.startPrank(user);
-        arb.flashSwap(
-            uni_factory.getPair(DAI, WETH),
-            sushi_factory.getPair(DAI, WETH),
-            true,
-            10000 * 1e18,
-            1
-        );
+        arb.flashSwap(uni_factory.getPair(DAI, WETH), sushi_factory.getPair(DAI, WETH), true, 10000 * 1e18, 1);
         vm.stopPrank();
         uint256 bal1 = dai.balanceOf(user);
 
