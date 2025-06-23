@@ -89,7 +89,7 @@ contract UniswapV2Arb2 {
 
         // here we calculate the fee to repay
         // TODO FEE SHOULD BE REPAYED HERE SOMETHING WRONG
-        uint256 feeToRepay = amount + (amount * 3) / 997 + 1; // 1 to round up
+        // uint256 feeToRepay = amount + (amount * 3) / 997 + 1; // 1 to round up
 
         // Now we need to repay the flash swap + fees
         IERC20(tokenToRepay).transfer(flashSwapData.pair0, flashSwapData.amountIn);

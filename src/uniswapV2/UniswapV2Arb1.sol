@@ -58,7 +58,6 @@ contract UniswapV2Arb is Test {
 
     function flashSwap(address pair, bool isToken0, SwapParams calldata params) external {
         // If it's token0 then the amount we want to borrow out of the pool is amount0Out
-        address token = isToken0 ? IUniswapV2Pair(pair).token0() : IUniswapV2Pair(pair).token1();
         (uint256 amount0Out, uint256 amount1Out) =
             isToken0 ? (params.amountIn, uint256(0)) : (uint256(0), params.amountIn);
 
@@ -72,7 +71,7 @@ contract UniswapV2Arb is Test {
         console2.log("balance", balance);
     }
 
-    function uniswapV2Call(address sender, uint256 amount0, uint256 amount1, bytes calldata data) external {
+    function uniswapV2Call(address sender, uint256 /* amount0 */, uint256 /* amount1 */, bytes calldata data) external {
         // 1. Require msg.sender is pair contract
         require(msg.sender == address(currentPair), "Uniswap V2: INVALID_TO");
 

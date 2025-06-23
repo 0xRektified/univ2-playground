@@ -221,3 +221,168 @@ t = 2* math.log(sqrt_p_x96 / Q96) / math.log(1.0001)
 print(t) # 195402.15505159998
 
 ```
+
+### Price calculation with solidity
+
+```solidity
+        // P = Y /X = WETH / USDC
+        //          = price of USDC in terms of WETH
+        // 1 / P = X / Y = USDC / WETH
+        //          = price of WETH in terms of USDC
+
+        // DECIMALS
+
+        // P has 1e18 / 1e6 = 1e12 decimals
+        // 1 / P has 1e6 / 1e18 = 1e12 decimals 
+
+        IUniswapV3Pool.Slot0 memory slot0 = pool.slot0();
+
+        // sqrtPriceX96 * sqrtPriceX96 might overflow
+
+        // sqrtPriceX96 = sqrt(P) * 96
+        // Q96 = 2 ** 96
+        // sqrtPriceX96 * sqrtPriceX96 = sqrt(P) * Q96 * sqrt(P) * Q96
+        //                             = P * Q96 * Q96 
+        //                               2 * 96 bits = 192 bits
+        //                             256 bites - 192 bits = 64 bits
+        //                             2**64 / 1e18 = approx eq = 18
+
+        // sqrtPriceX96 / Q96 * sqrtPriceX96 / Q96 = P
+        // Problem is it could round to zero and price will be innacurate
+        // Here we only use on Q96 to keep precision and will add it later
+        uint256 price = FullMath.mulDiv(slot0.sqrtPriceX96, slot0.sqrtPriceX96, Q96);
+
+
+        console2.log("price_raw %e", price);
+
+        // price = sqrt(P) * Q96 * sqrt(P) * Q96 / Q96
+        //      = P * Q96
+
+        // 1 / price = 1 / (P * Q96)
+        // it could return 0 because of a low number
+        // price = 1 / price
+
+        // First we cancel out the first Q96 by multipliying by Q96
+        // price = Q96 / price
+
+        // 1 / P has 1e6 / 1e18 = 1e12 decimals
+        // price = 1e12 * Q96 / price
+
+        // FInally we want to return the price with 18 decimals
+
+        price = 1e18 * 1e12 * Q96 / price;
+
+        assertGt(price, 0, "price = 0");
+        console2.log("price %e", price);
+```
+
+## Math
+
+#### Definition
+
+liquidity squared equals the product of reserves
+
+XY = L²
+
+price is the ratio of token Y to token X
+
+Y/X = P
+
+#### Equation for X
+
+L² / P = XY / (Y/X) = X²
+
+L² / P - Starting expression
+
+XY / (Y/X) - Substituting definitions:
+    - L² = XY (liquidity squared equals the product of reserves)
+    - P = Y/X (price is the ratio of token Y to token X)
+
+- Simplifying the division:
+ XY / (Y/X) = XY × (X/Y) = XY × X/Y = X²
+
+L² / P = X² means that if you know the liquidity and price,
+   you can calculate the amount of token X
+
+Rearranging: X = √(L² / P) = L / √P
+
+**Note**
+
+`X = L / √P`
+
+#### Equation for Y
+
+XY = L²  AND  Y/X = P
+
+L²P = XY . Y/X
+L²P = Y²
+
+Simplified
+
+Y = L * √P
+
+If you know the liquidity and price, you can calculate the amount of token Y
+
+**Note**
+
+`Y = L * √P`
+
+#### Curve of the real reserve
+
+XY = L²
+
+Total token = real amount and virtual amount 
+
+X = Xr+ Xv
+Y = Yr+ Yv
+
+XY = (Xr + Xv)(Yr + Yv) = L²
+
+- Find Xv and Yv
+
+- When Xr = 0 
+
+(Xr + Xv)(Yr + Yv) = L²
+
+Xv(Yr + Yv) = L²
+
+`Xv = L² / (Yr + Yv) `
+
+Based on the note above
+
+`Y = Yr+ Yv = L * √P`
+
+So `L² / (Yr + Yv)` is equal to `L² / L * √P`
+
+`L² / L * √P` can be simplified to `L / sqrt(P)`
+
+Xv = L / sqrt(Pb)
+
+- When Yr = 0
+
+(Xr + Xv)(Yr + Yv) = L²
+
+Yv(Xr + Xv) = L²
+
+`Yv = L² / (Xr + Xv)`
+
+Based on the note above
+
+Xr + Xv = X = L / √P
+
+So `L² / (Xr + Xv)` is equal to `L² / L / √P`
+
+`L² / (L / √P)` can be simplified to `L * sqrt(P)`
+
+  Step-by-step simplification:
+  1. L² / (L / √P)
+  2. = L² × (√P / L)    [dividing by a fraction = multiplying by its reciprocal]
+  3. = (L² × √P) / L    [rearranging]
+  4. = L × √P           [L²/L = L]
+
+Yv = L * sqrt(Pa)
+
+ So this formula shows how to calculate the amount of token Y
+  when you know the liquidity L and the amount of token X.
+
+![image](./UniswapV3img/3-curve-of-real-and-virtual-reserve.png)
