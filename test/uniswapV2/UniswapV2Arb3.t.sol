@@ -54,7 +54,7 @@ contract UniswapV2Arb3Test is Test {
         uint256 bal0 = dai.balanceOf(user);
         address uniPair = uni_factory.getPair(DAI, WETH);
         address sushiPair = sushi_factory.getPair(DAI, WETH);
-        
+
         (uint112 uniReserve0, uint112 uniReserve1,) = IUniswapV2Pair(uniPair).getReserves();
         (uint112 sushiReserve0, uint112 sushiReserve1,) = IUniswapV2Pair(sushiPair).getReserves();
 
@@ -68,7 +68,7 @@ contract UniswapV2Arb3Test is Test {
         arb.flashSwap(uniPair, sushiPair, true, optimalAmountIn, 1);
         vm.stopPrank();
         uint256 bal1 = dai.balanceOf(user);
-    console2.log("profit", bal1 - bal0);
+        console2.log("profit", bal1 - bal0);
         assertGt(bal1, bal0, "no profit");
         assertEq(dai.balanceOf(address(arb)), 0, "DAI balance of arb != 0");
     }

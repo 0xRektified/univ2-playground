@@ -120,129 +120,130 @@ contract UniswapV2Arb3 {
         uint256 yB // AMM B reserve out
     ) public pure returns (uint256 optimalAmountIn) {
         require(xA > 0 && yA > 0 && xB > 0 && yB > 0, "Invalid reserves");
-        
+
         console2.log("=== ANALYSIS ===");
         console2.log("xA", xA);
         console2.log("yA", yA);
         console2.log("xB", xB);
         console2.log("yB", yB);
-        
+
         // Calculate current prices
         uint256 priceA = (xA * 1e18) / yA; // Price on AMM A (how much xA per yA)
         uint256 priceB = (yB * 1e18) / xB; // Price on AMM B (how much yB per xB)
-        
+
         console2.log("priceA (xA/yA)", priceA);
         console2.log("priceB (yB/xB)", priceB);
         console2.log("price difference", priceA > priceB ? priceA - priceB : priceB - priceA);
         console2.log("price ratio %", priceA > priceB ? (priceA * 100) / priceB : (priceB * 100) / priceA);
-        
+
         // Mathematical approach: equalize execution prices
         console2.log("=== SOLVING FOR EXECUTION PRICE EQUILIBRIUM ===");
-        
+
         // Goal: y₁/(x₁ + dx) = y₂/(x₂ - dy₁) where dy₁ = getAmountOut(dx, x₁, y₁)
         // This is a more complex equation that needs iterative solving
-        
+
         optimalAmountIn = solveOptimalUsingMarginalRates(xA, yA, xB, yB);
         console2.log("Execution price equilibrium amount:", optimalAmountIn / 1e18);
     }
-    
+
     function solveExecutionPriceEquilibrium(
         uint256 x1, // DAI reserve AMM1
-        uint256 y1, // ETH reserve AMM1  
+        uint256 y1, // ETH reserve AMM1
         uint256 x2, // DAI reserve AMM2
-        uint256 y2  // ETH reserve AMM2
+        uint256 y2 // ETH reserve AMM2
     ) public pure returns (uint256 optimalDx) {
         // Direct mathematical solution using derivative = 0
         // For maximum profit: dP/dx = 0
         // Where P(dx) = final_dai_out - dx - flash_fee
-        
+
         console2.log("Solving derivative equation for maximum profit");
-        
+
         // The derivative condition leads to this equilibrium:
         // d/dx[getAmountOut(getAmountOut(dx, x1, y1), y2, x2)] = 1 + fee_rate
         // This translates to: (dy2/deth) * (deth/ddx) = 1 + 3/997
-        
+
         // From AMM math: dy/dx = (997 * y * r) / (1000 * x + 997 * dx)^2
         // Where r = reserveOut for the AMM
-        
+
         // Mathematical solution using the marginal rate condition
         return solveOptimalUsingMarginalRates(x1, y1, x2, y2);
     }
-    
+
     function solveOptimalUsingMarginalRates(
         uint256 x1, // DAI reserve AMM1
-        uint256 y1, // ETH reserve AMM1  
+        uint256 y1, // ETH reserve AMM1
         uint256 x2, // DAI reserve AMM2
-        uint256 y2  // ETH reserve AMM2
+        uint256 y2 // ETH reserve AMM2
     ) internal pure returns (uint256 optimalDx) {
         // Use golden section search to find maximum profit
         // This will find the true maximum regardless of starting point
-        
+
         uint256 smallerDaiPool = x1 < x2 ? x1 : x2;
-        uint256 left = smallerDaiPool / 100;   // Start at 1% of smaller pool
-        uint256 right = smallerDaiPool / 20;   // End at 5% of smaller pool
-        
+        uint256 left = smallerDaiPool / 100; // Start at 1% of smaller pool
+        uint256 right = smallerDaiPool / 20; // End at 5% of smaller pool
+
         console2.log("Golden section search:");
         console2.log("Search range:", left / 1e18, "to", right / 1e18);
-        
+
         // Golden ratio
         uint256 phi = 1618; // 1.618 * 1000
-        
-        for (uint i = 0; i < 30; i++) {
+
+        for (uint256 i = 0; i < 30; i++) {
             uint256 range = right - left;
             uint256 x1_point = left + (range * 1000) / (phi + 1000);
             uint256 x2_point = right - (range * 1000) / (phi + 1000);
-            
+
             uint256 profit1 = calculateProfitWithFee(x1, y1, x2, y2, x1_point);
             uint256 profit2 = calculateProfitWithFee(x1, y1, x2, y2, x2_point);
-            
+
             console2.log("Iteration", i);
             console2.log("Testing", x1_point / 1e18, "vs", x2_point / 1e18);
             console2.log("Profits", profit1 / 1e18, "vs", profit2 / 1e18);
-            
+
             if (profit1 > profit2) {
                 right = x2_point; // Maximum is in left section
             } else {
-                left = x1_point;  // Maximum is in right section
+                left = x1_point; // Maximum is in right section
             }
-            
+
             // Convergence check
-            if (right - left < 100 * 1e18) { // Within 100 DAI
+            if (right - left < 100 * 1e18) {
+                // Within 100 DAI
                 break;
             }
         }
-        
+
         optimalDx = (left + right) / 2;
         uint256 finalProfit = calculateProfitWithFee(x1, y1, x2, y2, optimalDx);
-        
+
         console2.log("Golden section result:");
         console2.log("Optimal dx:", optimalDx / 1e18);
         console2.log("Expected profit:", finalProfit / 1e18);
-        
+
         return optimalDx;
     }
-    
+
     function calculateProfitWithFee(
         uint256 x1, // DAI reserve AMM1
-        uint256 y1, // ETH reserve AMM1  
+        uint256 y1, // ETH reserve AMM1
         uint256 x2, // DAI reserve AMM2
         uint256 y2, // ETH reserve AMM2
         uint256 amountIn // DAI amount to borrow
     ) internal pure returns (uint256 profit) {
         if (amountIn == 0) return 0;
-        
+
         // Step 1: Borrow amountIn DAI, swap for ETH on AMM1
         uint256 ethOut = getAmountOut(amountIn, x1, y1);
         if (ethOut == 0) return 0;
-        
-        // Step 2: Swap ETH for DAI on AMM2  
+
+        // Step 2: Swap ETH for DAI on AMM2
         uint256 daiOut = getAmountOut(ethOut, y2, x2);
         if (daiOut == 0) return 0;
-        
+
         // Step 3: Calculate flash loan fee
         uint256 flashLoanFee = (amountIn * 3) / 997 + 1;
         uint256 totalToRepay = amountIn + flashLoanFee;
-        
+
         // Step 4: Calculate profit
         if (daiOut > totalToRepay) {
             profit = daiOut - totalToRepay;
