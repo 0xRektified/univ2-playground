@@ -684,7 +684,7 @@ This function gonna return the next init or unit tick from the current tick we c
 
 Then we calculate the sqrtPriceNext96
 
-If swap is exact input or output we apply this logic: 
+If swap is exact input or output we apply this logic:
 If swap is exact it ll deduct the amount to come in + fee
 Other out it ll add amount out to specified remaining
 
@@ -715,7 +715,7 @@ At the end of the loop it ll update the tick
 ---
 
 Amount in and out are calculated the following way
-```// zero for one | exact input |  //       true        |      true        |  amount 0 = specified - remaining ( > 0)
+```// zero for one | exact input | //       true        |      true        |  amount 0 = specified - remaining ( > 0)
 //                                            | amount 1 = calculated                     ( < 0)
 //       false       |      false       | amount 0 = specified - remaining ( < 0)
 //						| amount 1 = calculated		    ( > 0)
@@ -872,6 +872,22 @@ When the path have no more pool it ll exit
 
 `ExactOutputSingle`
 
+Called when a user want to swap a specific amount of token out for a specific pool contract
+
+It call the exactOutputInternal path is encoded the other way as tokenIn So tokenOut is first
+
+logic is kinda the same as previously
 
 `ExactOutput`
+
+The difference between the previous one is this function only call exactOutputInternal recursively
+
+The callback is the one calling the exactOutputInternal recursively if there is multiple pools.
+
+When the path doesn't have multiple pool anymore it call the `pay() method and wrap up the recursive.
+
+## Swap playground
+
+Each of this method are demonstrated in the test/uniswapV3.
+
 
