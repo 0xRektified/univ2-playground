@@ -386,3 +386,492 @@ Yv = L * sqrt(Pa)
   when you know the liquidity L and the amount of token X.
 
 ![image](./UniswapV3img/3-curve-of-real-and-virtual-reserve.png)
+
+#### Amount of token between price ranges
+
+Given L and P 
+
+What is the amount of x Between P and Pb ?
+
+x = L / sqrt(P)
+
+x =  L / sqrt(P) - L / sqrt(Pb)
+
+OR for simplicity
+
+x =  L / sqrt(P_lower) - L / sqrt(P_upper)
+
+What is the amount of y between P and Pa ?
+
+y = L * sqrt(P)
+
+y =L * sqrt(P) -  L * sqrt(Pa) 
+
+OR for simplicity
+
+y =L * sqrt(P_upper) -  L * sqrt(P_lower)
+
+
+## Swap
+
+### Flow
+
+- Inputs
+
+Zero for one (token0 -> token1 ?)
+amount specified sqrt(P limit)
+
+exact input = amount specified ?= 0
+
+- Loop
+
+Calculate amount in and out BELLOW
+
+While amount specified remaining != 0 and sqrt(P) != sqrt(Plimit)
+
+Get next tick
+
+calculate sqrt(Pnext)
+calculate sqrt(P) , amount in , out , fee
+
+-> need liquidity , amount specified remaining
+--> Call `computeSwapStep`
+
+--> For exact input calculate max amout in between sqrt(p) and sqrt(Ptarget) which is next
+--> For exact output calculate max amout out between sqrt(p) and sqrt(Ptarget) which is next
+
+--> calculate sqrt(Pnext)
+--> Calculate amount in and out and fee
+
+![image](./UniswapV3img/4-ptarget-pnext.png)
+
+* exact input
+amount specified remaining -= amount in + fee
+amount calculated -= amount out
+
+OR
+
+* exact output
+amount specified remaining += amount out
+amount calculated += amount in + fee
+
+update local variables liqidity , sqrt(p) , tick, fee
+
+Then END of the loop
+
+- Update state variable liquidity , sqrt(p), tick, fee growth
+
+- Send token out
+
+- swap call back (msg.sender token in)
+
+- check token in balance
+
+
+### Current active liquidity
+
+Liquidity net
+
+![image](./UniswapV3img/5-liquidity-net.png)
+
+When the price cross the tick upper or lower 
+
+we multiple current liquidity by the direction of the price by liquidity net (delta liquidity)
+to get next liquidity.
+
+![image](./UniswapV3img/6-liquidity-visual.png)
+
+## Delta price
+
+What is the price after adding or removing DeltaX ?
+
+### Add delta X from Pupper
+
+price decreases from Pupper to Plower
+
+**Starting equation:**
+
+delta_x = L / sqrt(P_lower) - L / sqrt(P_upper)
+
+**Step 1: Rearrange to isolate L / sqrt(P_lower)**
+
+L / sqrt(P_upper) + delta_x = L / sqrt(P_lower)
+
+**Step 2: Multiply both sides by sqrt(P_upper)**
+
+(L / sqrt(P_upper) + delta_x) × sqrt(P_upper) = (L / 
+sqrt(P_lower)) × sqrt(P_upper)
+
+**Step 3: Distribute on the left side**
+
+L + delta_x × sqrt(P_upper) = L × sqrt(P_upper) / sqrt(P_lower)
+
+**Step 4: Cross multiply (multiply both sides by sqrt(P_lower))**
+
+(L + delta_x × sqrt(P_upper)) × sqrt(P_lower) = L × sqrt(P_upper)
+
+**Step 5: Solve for sqrt(P_lower)**
+
+sqrt(P_lower) = (L × sqrt(P_upper)) / (L + delta_x × 
+sqrt(P_upper))
+
+**Final result:**
+
+sqrt(P_lower) = L × sqrt(P_upper) / (L + delta_x × sqrt(P_upper))
+
+### Remove delta X from Pupper
+
+price increases from Plower to Pupper 
+
+**Starting equation:**
+
+delta_x = L / sqrt(P_lower) - L / sqrt(P_upper)
+
+**Step 1: Rearrange to isolate L / sqrt(P_upper)**
+
+L / sqrt(P_upper) = L / sqrt(P_lower) - delta_x
+
+**Step 2: Take reciprocals of both sides**
+
+sqrt(P_upper) / L = 1 / (L / sqrt(P_lower) - delta_x)
+
+**Step 3: Simplify the right side (find common denominator)**
+
+sqrt(P_upper) / L = 1 / ((L - delta_x × sqrt(P_lower)) / 
+sqrt(P_lower))
+
+**Step 4: Simplify division by fraction**
+
+sqrt(P_upper) / L = sqrt(P_lower) / (L - delta_x × sqrt(P_lower))
+
+**Step 5: Cross multiply**
+
+sqrt(P_upper) × (L - delta_x × sqrt(P_lower)) = L × sqrt(P_lower)
+
+**Step 6: Solve for sqrt(P_upper)**
+
+sqrt(P_upper) = L × sqrt(P_lower) / (L - delta_x × sqrt(P_lower))
+
+**Final result:**
+
+sqrt(P_lower) = L × sqrt(P_lower) / (L - delta_x × sqrt(P_lower))
+
+---
+
+What is the price after adding or removing DeltaY ?
+
+### Add delta Y from Pupper
+
+price increase from Plower to Pupper
+
+**Starting equation:**
+
+delta_y = L * sqrt(P_upper) - L * sqrt(P_lower)
+
+**Step 1: Rearrange to isolate sqrt(P_upper)**
+
+L * sqrt(P_upper) = delta_y + L * sqrt(P_lower)
+
+**Step 2: Divide both sides by L**
+
+sqrt(P_upper) = delta_y / L + sqrt(P_lower)
+
+**Final result:**
+
+sqrt(P_upper) = delta_y / L + sqrt(P_lower)
+
+
+### Remove delta Y from Pupper
+
+price decreases from Pupper to Plower
+
+**Starting equation:**
+
+delta_y = L * sqrt(P_lower) - L * sqrt(P_upper)
+
+**Step 1: Rearrange to isolate sqrt(P_lower)**
+
+L * sqrt(P_lower) = delta_y + L * sqrt(P_upper)
+
+**Step 2: Divide both sides by L**
+
+sqrt(P_lower) = delta_y / L + sqrt(P_upper)
+
+**Final result:**
+
+sqrt(P_lower) = delta_y / L + sqrt(P_upper) 
+
+
+## Math Swap fee
+
+Swap fee is charged from amount in
+
+f = swap fee percentage 0<= f <= 1
+
+A = amount in before swap fee
+
+fee = swap fee = Af
+
+Ain = amount in after swap fee
+    = A - fee <= max maount in
+Aout = amount out <= max amount out
+
+### Exact Out
+
+Find max amount out -> calculate -> Aout - > calculate Ain -> calculate Fee
+From P to Pa
+
+Ain = A - fee = A - Af = A(1-f)
+
+Ain/1-f = A
+
+Fee = Af = (Ain/1-f) * f
+
+### Exact In
+
+#### Ain = max amount in
+
+Fee = (Ain/1-f) * f
+
+#### Ain < max amount in
+
+Basically the amountRemaining minus the amountIn
+
+Fee = A - Ain = A - (A - Fee) = Fee
+
+
+## Code Walkthrough Swap
+
+
+### important struct
+
+`Slot0` struct is used to save gas
+Observation are used for price oracle
+
+### Params
+`recipient` - receiver of token out
+`zeroForOne` - token zero come in token1 go out
+`Int256 amountSpecified` - can be pos or neg
+⚠️ If the number is positive it mean it’s an exact input
+⚠️ if amount is neg It mean the user specify how much he want and the protocol will calculate the amount out
+
+`sqrtPricelimitX96` // x * (2 **96) 
+`data` // the amount used in the callback
+
+We pass the amount in the callback
+
+
+The function have a reentrancy guard
+
+SwapCache is used to save gas
+
+Then we check if it’s exact input but checking if number is positiv or negative 
+
+Save state value in SwapState
+
+Then While loop
+
+We are one swapping in the bar that represent current liquidity , we check how much go in and out
+
+Looping untill reach the about specified remain
+
+Inside the TickBitmap.sol library there is a 
+
+`nextInitializedTickWithOneWord` 
+
+This function gonna return the next init or unit tick from the current tick we check if it ’s between the min and max tick
+
+
+Then we calculate the sqrtPriceNext96
+
+If swap is exact input or output we apply this logic: 
+If swap is exact it ll deduct the amount to come in + fee
+Other out it ll add amount out to specified remaining
+
+In both cases it ll approach 0 
+
+For exactInput it ll start from positive number and go close to 0
+For exactOutput it start from negative number and go close to 0
+
+```            if (exactInput) {
+                state.amountSpecifiedRemaining -= (step.amountIn + step.feeAmount).toInt256();
+                state.amountCalculated = state.amountCalculated.sub(step.amountOut.toInt256());
+            } else {
+                state.amountSpecifiedRemaining += step.amountOut.toInt256();
+                state.amountCalculated = state.amountCalculated.add((step.amountIn + step.feeAmount).toInt256());
+            }
+```
+
+Then we calculate the fee using feeGrowthGlobalX128
+
+
+If current sqrtX96 reach the nextsqrtX96 and tick is initialise it ll store variable for price oracle
+
+
+It ll get the liquidity net and update the active liquidity
+
+At the end of the loop it ll update the tick
+
+---
+
+Amount in and out are calculated the following way
+```// zero for one | exact input |  //       true        |      true        |  amount 0 = specified - remaining ( > 0)
+//                                            | amount 1 = calculated                     ( < 0)
+//       false       |      false       | amount 0 = specified - remaining ( < 0)
+//						| amount 1 = calculated		    ( > 0)
+//       false       |      true        | amount 0 = calculated
+//						| amount 1 = specified - remaining ( > 0)
+//       true        |      false       | amount 0 = calculated
+//						| specified - remaining ( < 0)
+        (amount0, amount1) = zeroForOne == exactInput
+            ? (amountSpecified - state.amountSpecifiedRemaining, state.amountCalculated)
+            : (state.amountCalculated, amountSpecified - state.amountSpecifiedRemaining);
+```
+
+Last part it’s gonna transfer token out and call the call back
+```        if (zeroForOne) {
+            if (amount1 < 0) TransferHelper.safeTransfer(token1, recipient, uint256(-amount1));
+
+            uint256 balance0Before = balance0();
+            IUniswapV3SwapCallback(msg.sender).uniswapV3SwapCallback(amount0, amount1, data);
+            require(balance0Before.add(uint256(amount0)) <= balance0(), 'IIA');
+        } else {
+            if (amount0 < 0) TransferHelper.safeTransfer(token0, recipient, uint256(-amount0));
+
+            uint256 balance1Before = balance1();
+            IUniswapV3SwapCallback(msg.sender).uniswapV3SwapCallback(amount0, amount1, data);
+            require(balance1Before.add(uint256(amount1)) <= balance1(), 'IIA');
+        }
+```
+msg.sender will send the amount request, and check the balance of token0
+
+### Function interaction
+
+ExactInputSingleParams
+ExactInputParams
+ExactOutputSingleParams
+ExactOutputParams
+
+Each of those function are calling ExactInputInternal or ExactOutputInternal
+
+Inside those function there is an internal data that is olding the path
+
+it encode the 2 tokens and the fees which identify the pool to swap one
+
+the type is bytes
+
+path = [token, fee, token, fee ...]
+
+Example:
+
+DAI -> USDC -> WETH
+   0.01%    0.3%
+
+path = [DAI , 100, USDC, 3000, WETH]
+
+Fee is scaled up by 1000
+
+#### `ExactInput single`
+
+path = [token in, fee, token out]
+
+![image](./UniswapV3img/7-swap-single-flow.png)
+
+Call trace example of `ExactInput single`
+
+
+exactInput(path = [A, fee, B , fee, C , fee, D])
+payer = user
+--> while loop
+--> exactinputInternal(recipient = router)
+---> swap A/B
+----> transfer B to recipient
+-----> uniswapV3SwapCallback
+------> transfer A from user to pool A/B
+
+--> payer = router
+--> path = [B, fee, C , fee, D]
+--> while loop
+--> exactinputInternal(recipient = router)
+---> swap B/C
+----> transfer C to recipient
+-----> uniswapV3SwapCallback
+------> transfer B from router to pool B/C
+
+--> payer = router
+--> path = [C, fee, D]
+--> while loop
+--> exactinputInternal(recipient = user)
+---> swap C/D
+----> transfer D to recipient
+-----> uniswapV3SwapCallback
+------> transfer C from router to pool C/D
+
+#### `ExactOutput single`
+
+path = [token out, fee, token in]
+
+![image](./UniswapV3img/8-swap-single-out-flow.png)
+
+For swap A -> B -> C -> D
+Swap will happen in the reverse order
+
+first swap will happen with C/D
+
+![image](./UniswapV3img/9-swap-token-out-revert-order.png)
+
+Call trace example of `ExactOutput single`
+
+exactOutput(path = [D, fee, C , fee, B , fee, A])
+payer = user
+--> while loop
+--> exactoutputInternal(recipient = user)
+---> swap C/D
+----> transfer D to recipient (user receive token)
+-----> uniswapV3SwapCallback
+------> path = [C, fee, B, fee, A]
+------> exactoutputInternal(recipient = C/D) (recursive call)
+------> swap B/C
+------> transfer C to recipient
+-------> uniswapV3SwapCallback
+-------> path = [B, fee, A]
+-------> exactoutputInternal(recipient = B/C) (recursive call)
+-------> swap A/B
+-------> transfer B to recipient
+-------> uniswapV3SwapCallback
+-------> transfer A from user to pool A/B (User finally pay)
+
+
+## Code walkthrough V3SwapRouter02
+
+`ExactInputSingle`
+
+Used to swap specific token in for out (calculate by pool), it ll only swap for single pool 
+
+Call exactInputInternal.
+[DAI, 100, USDC, 3000, WETH] path should be encoded this way
+--> use data.path.decodeFirstPool() to get the pool
+
+Then it call the function swap on the pool
+
+in the uniswap v3 pool contract the V3 callback will be executed in the router
+
+In uniswapV3SwapCallback if exact input it ll use data.apyer and msg.sender to transfer token out
+
+Then the swap function will return the amount0 and amount1
+
+`ExactInput`
+
+Used to swap specific token in for out (calculate by pool), it ll only swap for multiple pool
+
+Inside this function there is a while loop for multiple pools
+if there is multiple pool it ll set the payer as the router
+
+on each iteration it ll call `exactInputInternal`
+When the path have no more pool it ll exit
+
+`ExactOutputSingle`
+
+
+`ExactOutput`
+
