@@ -890,4 +890,62 @@ When the path doesn't have multiple pool anymore it call the `pay() method and w
 
 Each of this method are demonstrated in the test/uniswapV3.
 
+## Factory
 
+### How the factory contract deploy the pool contract
+
+how does Create2 compute the address
+
+```
+address = keccak256(
+    0xFF,
+    deployer, // the address that deploy the contract
+    salt, // specified byt the deployer
+    keccak256(creation bytecode, constructor inputs) // the creation bytecode of the contract and the constructor arguments
+    )
+```
+
+### Uniswap V3 pool address
+
+address = last 20 bytes of keccak256(
+    0xFF,
+    deployer = factory contract
+    salt = keccak256(token 0 , token 1, fee)
+    keccak256(
+        creation bytecode // uniswapV3Pool
+        // No constructor inputs
+        )
+    )
+    
+- Pool address determined by token0 token1 and fee
+
+Salt and constructor inputs are dynamic
+
+- Initialize contract with parameters
+ token0, token1, fee, factory, address, tick Spacing
+
+Solution is to use the salt = keccak256 (token0, token 1, fee)
+No constructor input
+Temporary store the initialization inputs inside the factory
+
+
+### Creation Flow
+
+User call creatPool(token0, token1, fee)
+-> deploy(factory, token0, token1, fee, tickSpacing)
+--> store parameters
+--> new uniswapV3Pool() <- salt = keccak256(token0, token1, fee)
+---> get parameter from msg.sender
+-> delete parameters
+
+### Pool creation playground
+
+demonstrate get pool address and create a pool in test/uniswapV3/UniswapV3Factory.t.sol
+
+## Flash swap
+
+Flash in V3 work differently as V2 as there is a dedicated function `flash` to call it
+
+Parameters are recipient, amount0, amount1, data.
+
+We need to implement the callback function `uniswapV3FlashCallback` in our contract that will be called by the pool contract. parameters are fee0, fee1, data.
