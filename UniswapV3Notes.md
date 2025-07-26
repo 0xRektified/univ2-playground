@@ -949,3 +949,47 @@ Flash in V3 work differently as V2 as there is a dedicated function `flash` to c
 Parameters are recipient, amount0, amount1, data.
 
 We need to implement the callback function `uniswapV3FlashCallback` in our contract that will be called by the pool contract. parameters are fee0, fee1, data.
+
+## Liquidity
+
+Where P is currrent price
+
+Find liquidity L given x , y , P , Plower, Pupper
+
+x and y in Ploower to Pupper
+
+x = L / sqrt(Plower) - L / sqrt(Pupper)
+
+y = L * (sqrt(Pupper) - sqrt(Plower))
+
+### When P <= Pa
+
+x = L / sqrt(Plower) - L / sqrt(Pupper)
+
+L = x / (1/sqrt(Pa)) - (1/sqrt(Pb)) = x * sqrt(Pa) * sqrt(Pb) / (sqrt(Pb) - sqrt(Pa))
+
+### When Pb <= p
+
+y = L * (sqrt(Pupper) - sqrt(Plower))
+
+L = y / (sqrt(Pb) - sqrt(Pa)) = y * sqrt(Pa) * sqrt(Pb) / (sqrt(Pb) - sqrt(Pa))
+
+### When Pa < P < Pb
+
+Lx = liquidity from P to Pb
+
+Lx = x / (1/sqrt(P)) - (1/sqrt(Pb)) 
+
+Ly = liquidity from Pa to P
+
+Ly = y / (sqrt(P) - sqrt(Pa))
+
+### Liquidity delta
+
+L0 = liquidity before
+
+L1 = liquidity after
+
+deltaL = L1 - L0
+
+how much delatX and deltaY to add or remove if liquidity changes by deltaL between Pa and Pb ?
