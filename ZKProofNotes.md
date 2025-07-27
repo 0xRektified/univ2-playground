@@ -1,5 +1,12 @@
 # ZKP
 
+## Course Credits
+
+These notes are taken from the [Cyfrin Updraft course](https://updraft.cyfrin.io/courses/noir-programming-and-zk-circuits).
+
+**Kudos to the instructors:**
+- **Ciara Nightingale** - Developer Relations at Cyfrin
+
 ## Base
 
 There is 2 entities iimportant in ZKP.
@@ -414,3 +421,64 @@ Completeness
 
 Constraints
 
+# Zero Knowledge for Developer NOIR
+
+- What is a key difference between on-chain and off-chain verification of ZK proofs?
+
+On-chain verification occurs directly on a blockchain, often within smart contracts, while off-chain verification happens outside the blockchain environment.
+
+- What is the primary characteristic of a Zero-Knowledge proof?
+
+It allows a prover to demonstrate the truth of a statement without revealing any information beyond the statement's validity.
+
+- In a zero-knowledge proof system, what is the fundamental role of a prover?
+
+To generate a proof demonstrating a claim without revealing secret inputs.
+
+- What kind of foundational understanding of zero-knowledge concepts is assumed for developers starting this course?
+
+Familiarity with core ZK concepts such as witnesses, circuits, constraints, and the roles of provers/verifiers.
+
+- What is the primary function of the Noir programming language in the development of zero-knowledge applications?
+
+To define and construct circuits used for generating and verifying zero-knowledge proofs.
+
+- Which of the following best describes the level of mathematical expertise required to build ZK applications using Noir?
+
+Noir abstracts away much of the complex mathematics, allowing focus on application logic rather than deep cryptographic theory.
+
+-  Noir compiles programs into an Abstract Circuit Intermediate Representation (ACIR). What is a key architectural advantage of using such an intermediate representation in the context of ZK proving systems?
+
+It allows the language to be backend agnostic, enabling compatibility with various ZK proving systems.
+
+## What is NOIR
+
+Noir focuses on generating proofs that a program ran correctly. This builds upon the idea that by proving correct execution, you implicitly prove knowledge of the private and public inputs that satisfy the program's defined constraints. This distinguishes it from more general proofs of knowledge
+
+ACIR - Arithmetic Circuit Intermediate Representation
+A key feature of Noir is its compilation to ACIR. ACIR is an intermediate representation that standardizes the circuit's logic. This abstraction makes Noir backend-agnostic. The compiled ACIR can be used with various proving systems or "backends." For instance, while this course will utilize Aztec's Plonk-based Barretenberg backend, the same Noir code (compiled to ACIR) could potentially be used with a Groth16 backend or others compatible with ACIR
+
+Can generate a proof for any kind of backend
+
+Language is similar to Rust.
+
+### Noir architecture
+
+First we need to install Nargo cli.
+
+We will define a Circuit in Nargo and then we can either compile to ACIR or execture a witness.
+We can also use check to verify the circuits.
+
+With the ACIR we can use any kind of backend in our case we ll use Barretenberg to generate the proof (with the witness).
+
+### ZK protocol Architecture
+
+3 components
+
+first your circuit define the rules that the input must satisfy (public , private) and mathematical rules leave off chain.
+
+Frontent / CLI creating input for the circuit, execute the circuit to generate the witness, creating the proof and verify that proof can be done using the cli or in code.
+
+On-chain smart contract, app dcalls function on smart contractt passing the proof data as an argument.
+
+User interact with FE -> FE interact with the compile circuit -> Proof is generated from the circuit -> Proof will be send to the contract `verifyProof` -> it will call verify in the smart contract
